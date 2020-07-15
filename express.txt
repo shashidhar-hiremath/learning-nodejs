@@ -1,0 +1,844 @@
+
+
+
+Express:-
+
+1) Create Server: 
+
+const http = require('http');
+const routes = require('./routes');
+const server = http.createServer(routes.handler);
+server.listen(3000);
+
+2) route handler 
+
+const requestHandler = (req, res, next) => { }
+
+3) Getting info drom URL
+
+ const url = req.url;
+ const method = req.method;
+
+4) Responding : 
+
+res.write('<html>');
+    res.write('<head><title>Enter Message</title></head>');
+    res.write(
+      '<body><form action="/message" method="POST"><input type="text" name="message"><button 	type="submit">Send</button></form></body>'
+    );
+    res.write('</html>');
+
+res.statusCode = 302;
+        res.setHeader('Location', '/');
+    return res.end();
+
+5) File Management: 
+	
+const fs = require('fs');
+
+fs.writeFile('message.txt', message + "1111", err => {
+        res.statusCode = 302;
+        res.setHeader('Location', '/');
+        return res.end();
+      });
+
+6) Exporting file: 
+
+** Single Export **
+// module.exports = requestHandler;
+
+
+** Multiple exports **
+// module.exports = {
+//     handler: requestHandler,
+//     someText: 'Some hard coded text'
+// };
+
+// module.exports.handler = requestHandler;
+// module.exports.someText = 'Some text';
+
+exports.handler = requestHandler;
+exports.someText = 'Some hard coded text';
+
+7) Nodemon : Refresh running app
+
+Running app: npm start
+
+package.json-
+"scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon app.js",
+    "start-server": "node app.js"
+  },
+
+Degub app:
+launch.json-
+"configurations": [
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch Program",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}\\app.js",
+            "restart": true,
+            "runtimeExecutable": "nodemon",
+            "console": "integratedTerminal"
+        }
+    ]
+
+__________________________________________________________Core concepts End_____________________________________________________________
+
+__________________________________________________________****Express****_____________________________________________________________
+
+8) const express = require('express');
+   const app = express();
+   app.use('/', (req, res, next) => {
+	next();
+   });
+   app.listen(3000);
+
+9) Creating route 
+
+./routes/root.js
+
+    const express = require('express');
+    const path = require('path');
+    const rootDir = require('../utils/path');
+
+    const router = express.Router();
+
+    router.get('/', (req, res, next) => {
+        res.sendFile(path.join(rootDir, 'views', 'root.html'));
+    });
+
+    module.exports = router;
+
+// ./app.js
+
+    app.use('/', rootRouter);
+
+10) Setting root dir
+    const path = require('path');
+    module.exports = path.dirname(process.mainModule.filename);
+
+11) setting static path 
+
+// ./app.js
+
+    const path = require('path');
+    app.use(express.static(path.join(__dirname, 'public')));
+
+12) Seetin gbody parser
+
+	npm instal --save body-parser
+
+// app.js
+
+    const bodyParser = require('body-parser');
+
+    app.use(bodyParser.urlencoded({extended: false}));
+
+13) 404 page
+
+	app.use((req, res, next) => {
+		res.status(404).send("<h1>Page not found</h1>");
+	})
+
+14) serving files statically
+
+	app.use(express.static(path.join(__dirname, 'public'))) // public is directory name
+
+	now we can access files from the path as read only, for e.g: <link rel="stylesheet" href="/css/main.css">
+
+_________________________________________________***Working with Dynamic Content & Adding Templating Engi***__________________________________________
+
+15) 
+
+
+App.js
+app.set('view engine', 'ejs');
+app.set('views', 'views');
+
+Another file:-
+const path = require('path');
+
+const router = express.Router();
+
+router.get('/', (req, res, next) => {
+    res.render('index', {
+        pageTitle: 'Sign up',
+        path: '/'
+    });
+});
+
+module.exports = router;
+
+EJS:-
+
+<%= show the text in template %>
+-----------------------------------------
+<% perform javascript operation %>
+
+ <% if (registeredUsers.length > 0) { %>
+	<lu>
+            <% for (let user of registeredUsers) { %>
+                <li><%= user.name %></li>
+            <% } %>
+        </lu>
+ <% } else { %>
+        <h2>No Registered User</h2>
+ <% } %>
+-----------------------------------------
+
+<%- include('includes/head.ejs') %>
+
+_________________________________________________******__________________________________________
+
+16) redirect to other URL: res.redirect('<url>')
+
+17) Routing: 
+
+const route = express.Router()
+
+18) Controllers :
+
+exports.<controller_name> = (req, res, next) => { }
+_________________________________________________*** Mongo DB***__________________________________________
+
+const mongodb = require('mongodb');
+const MongoClient = mongodb.MongoClient;
+
+let _db;
+
+const mongoConnect = callback => {
+  MongoClient.connect('mongodb://localhost:27017/shop?retryWrites=true',{ useUnifiedTopology: true })
+    .then(client => {
+      console.log('Connected!');
+      _db = client.db();
+      callback();
+    })
+    .catch(err => {
+      console.log(err);
+      throw err;
+    });
+};
+
+const getDb = () => {
+  if (_db) {
+    return _db;
+  }
+  throw 'No database found!';
+};
+
+exports.mongoConnect = mongoConnect;
+exports.getDb = getDb;
+
+------------------------------------------------------------------------------------------------------------
+
+	Opration: 
+
+	1) Add record: 
+
+		cont db = getDb();
+		db.collection('<collection_name>').insertOne(<object>).then().catch()
+
+	2) find: by ._id
+
+		const ObjectId = mongodb.ObjectId;
+		db.collection('<collection_name>').find().toArray().then().catch()
+
+	3) findOne
+
+		db.collection('<collection_name>').find({_id: new ObjectId(<id>) }).next().then().catch()
+
+	4) updateOne: 
+
+		db.collection('users')
+      			.updateOne(
+        				{ _id: new ObjectId(this._id) },
+        				{ $set: { cart: { items: updatedCartItems } } }
+      			);
+
+	5) delete:
+
+		db.collection('users').deleteOne({ _id: new ObjectId(this._id) }).then().catch()
+
+
+--------------------------------------------------------------------------------------------------------
+
+	Model :
+
+	class Product {
+  		constructor(title, price, description, imageUrl, id, userId) {
+    			this.title = title;
+    			this.price = price;
+    			this.description = description;
+    			this.imageUrl = imageUrl;
+    			this._id = id ? new mongodb.ObjectId(id) : null;
+    			this.userId = userId;
+  		}
+
+  		save() {
+    			const db = getDb();
+		}
+	
+		static fetchAll() { 
+			return db.collection('<collection_name>').find().toArray().then( x => x).catch(err => { console.log(err) });
+		}
+	}
+
+_________________________________________________*** Mongoose***__________________________________________
+
+	
+
+mongoose.connect('mongodb://localhost:27017/shop?retryWrites=true', {useNewUrlParser: true, useUnifiedTopology: true}).then(x => {
+  User.findOne().then(user => {
+    if(!user){
+      const user = new User({
+        name: 'papu',
+        email: 'papu123@gmail.com',
+        cart:{
+          items: []
+        }
+      });
+      user.save();
+    }
+  });
+  app.listen(3000);
+}).catch( error => {
+  console.log(error);
+});
+
+1) create Schema
+
+const Schema = mongoose.Schema;
+
+const userSchema = new Schema({
+    name: {
+        type: String,
+        required: true
+    },
+    email: {
+        type: String,
+        required: true
+    },
+    cart: {
+        items: [{
+            productId:{ type: Schema.Types.ObjectId, ref: 'Product', required: true},
+            quantity: {type: Number, required: true}
+        }]
+    }
+});
+
+module.exports = mongoose.model('Product', productSchema);
+
+2) Add methode
+
+userSchema.methods.clearCart = function() {
+    this.cart = { items: []};
+    return this.save();
+};
+
+3) Save:
+	 const product = new Product({name: 'parle biscute', price: 12});
+	 product.save()
+
+4) Find: 
+	Product.findById(prodId)
+    		.then(product => {
+      			res.render('shop/product-detail', {
+        			product: product,
+        			pageTitle: product.title,
+        			path: '/products'
+      			});
+    		})
+    		.catch(err => console.log(err));
+
+5) Remove : 
+
+	Product.findByIdAndRemove(prodId)
+
+6) Update: 
+Product.findById(prodId).then( product => {
+    product.title = updatedTitle;
+    product.price = updatedPrice;
+    product.description = updatedDesc;
+    product.imageUrl = updatedImageUrl;
+    product.save()
+  })
+
+7) select required elements
+
+Product.find()
+    .select('title price -_id')
+    .populate('userId')
+
+to remove some field add '-' before fieldname
+
+8) Getting relation data
+
+    User.findById(userId)
+    .populate('cart.items.productId')
+    .execPopulate()
+    .then(user => {
+      const products = user.cart.items.map(x => {
+        return {quantity: x.quantity, product: { ...x.productId._doc }};
+      });
+      console.log(products);
+      const order = new Order({
+        user: {
+          name: req.user.name,
+          userId: req.user
+        },
+        products: products
+      });
+
+      return order.save();
+    })
+
+get relation data popuplate ".populate('cart.items.productId').execPopulate()"
+here products are relations data that comes has object so to use it "{ ...x.productId._doc }"
+
+
+_________________________________________________*** Cookies ***__________________________________________
+
+1) Set cookies:
+response.setHeader('Set-Cookies', 'loggedIn=true');
+
+	Stop manipulation: response.setHeader('Set-Cookies', 'loggedIn=true; Expires=<http-date-formate>');
+			   response.setHeader('Set-Cookies', 'loggedIn=true; Max-Age=10');
+			   response.setHeader('Set-Cookies', 'loggedIn=true; Domain=');
+			   response.setHeader('Set-Cookies', 'loggedIn=true; Secure');
+			   response.setHeader('Set-Cookies', 'loggedIn=true; HttpOnly'); can access cookie from browser
+
+2)Read Cookie
+request.get('Cookie')
+
+
+_________________________________________________*** Session ***__________________________________________
+
+1)Set session 
+	npm install --save express-session
+//app.js
+const session = require('express-session');
+app.use(session({secret: 'my secret', resave: false, saveUninitialized: false}));
+
+1) Set session:
+exports.postLogin =  (req, res, next) => {
+  req.session.isLoggedIn = true;
+  res.redirect('/');
+};
+
+2) access session:
+
+exports.getLogin = (req, res, next) => {
+
+  res.render('auth/login', {
+    path: '/login',
+    pageTitle: 'Login',
+    isAuthenticated: req.session.isLoggedIn
+  });
+};
+
+
+3) Setup session to MongoDB
+
+npm i connect-mongodb-session
+
+var MongoDBStore = require('connect-mongodb-session')(session);
+var store = new MongoDBStore({
+  uri: MongoDBUrl,
+  collection: 'sessions'
+});
+app.use(
+  session({secret: 'my secret', resave: false, saveUninitialized: false, store: store})
+);
+
+4) Destroy Session:
+
+exports.  postLogout =  (req, res, next) => {
+  req.session.destroy((error) => {
+    res.redirect('/');
+  })
+};
+
+
+_________________________________________________*** bcryptjs ***__________________________________________
+
+npm i --save bcryptjs
+const bcrypt = require('bcryptjs');
+
+1)Set hashedPassword: 
+
+bcrypt.hash(password, 12)
+      .then(hashedPassword => {
+	storePassword = hashedPassword;
+      });
+
+
+2) Get hashedPassword :
+
+bcrypt.compare(<EnteredPassword>, <CurrentStoredPassword>)
+      .then(isMatched => {
+		if(isMatched) {
+			<login>
+		}
+		return res.redirect('/login');
+	})
+
+_________________________________________________*** CSRF Attack ***__________________________________________
+
+Cross-site Request Eorgery
+
+npm i --save csurf
+
+const csrf = require('csurf');
+const csrfProtection = csrf();
+//after session
+app.use(csrfProtection);
+//In html post method form
+<input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+_________________________________________________*** req.locals ***__________________________________________
+
+Used for global response data
+app.use((req, res, next) => {
+  res.locals.isAuthenticated = req.session.isLoggedIn;
+  res.locals.csrfToken = req.csrfToken();
+  next();
+});
+_________________________________________________*** Flash message ***__________________________________________
+
+npm i --save connect-flash
+
+const flash = require('connect-flash');
+app.use(flash());
+
+1) Add Message:
+	req.flash('error', 'Invalid email or password.');
+
+2) set in response
+
+exports.getLogin = (req, res, next) => {
+  res.render('auth/login', {
+    path: '/login',
+    pageTitle: 'Login',
+    isAuthenticated: false,
+    errorMessage: req.flash('error')
+  });
+};
+
+_________________________________________________*** Send Email ***__________________________________________
+
+npm i --save nodemailer
+
+const nodemailer = require('nodemailer');
+
+const User = require('../models/user');
+
+var transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: '<email>',
+    pass: '************'
+  }
+});
+
+
+          var mailOption = {
+            from: '<send-email>',
+            to: <to-email>,
+            subject: 'Node js app',
+            html: '<h1 style="color:#f00;"> You got successfull sign in</h1>'
+          };
+          return transporter.sendMail(mailOption, (error, info) => {
+            console.log(error ? error : info.response);
+          });
+
+_________________________________________________*** express-validator ***__________________________________________
+
+
+npm i --save express-validator
+
+In Route:--------------------------
+
+const { check } = require('express-validator'); 
+
+router.post('/signup',
+            check('email')
+            .isEmail()
+            .withMessage('Please enter valid email.')
+            .custom((value, {req}) => {
+                if(value === 'test@test.com') {
+                    throw new Error('This email is forbidden');
+                }
+                return true;
+            }),
+        authController.postSignup);
+
+Async :-
+check('email')
+.custom((value, { req }) => {
+        return User.findOne({ email: value }).then(userDoc => {
+          if (userDoc) {
+            return Promise.reject(
+              'E-Mail exists already, please pick a different one.'
+            );
+          }
+        });
+      })
+
+Synitization:-
+
+check('email').normalizeEmail()
+body('password').trim()
+
+Error Thrown object :-----------------------------------
+
+[
+  {
+    value: 'test@gmail.com',
+    msg: 'E-Mail exists already, please pick a different one.',
+    param: 'email',
+    location: 'body'
+  }
+]
+
+In Controller: ---------------------------------
+
+const { validationResult } = require('express-validator');
+
+const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).render('auth/signup', {
+      path: '/signup',
+      pageTitle: 'Signup',
+      errorMessage: errors.array()[0].msg
+    });
+  }
+
+
+
+Showing error to each control: -
+const errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    console.log(errors.array());
+    return res.status(422).render('admin/edit-product', {
+      pageTitle: 'Add Product',
+      path: '/admin/edit-product',
+      editing: false,
+      hasError: true,
+      product: {
+        title: title,
+        imageUrl: imageUrl,
+        price: price,
+        description: description
+      },
+      errorMessage: errors.array()[0].msg,
+      validationErrors: errors.array()
+    });
+  }
+
+Adding "Invalid class to error control"
+ 		<input 
+                    class="<%= validationErrors.find(e => e.param === 'title') ? 'invalid' : '' %>"
+                    type="text" 
+                    name="title" 
+                    id="title" 
+                    value="<%= product.title %>">
+
+_________________________________________________*** Error Handling ***__________________________________________
+
+1) Throw error throug next() :- next(new Error(err));
+app.use((req, res, next) => {
+ User.findById(req.session.user._id)
+    .then(user => {
+      if (!user) {
+        return next();
+      }
+      req.user = user;
+      next();
+    })
+    .catch(err => {
+      next(new Error(err));
+    });
+})
+
+
+2) Catch error through the next(<error>):- 
+app.use((error, req, res, next) => {
+  // res.status(error.httpStatusCode).render(...);
+  // res.redirect('/500');
+  res.status(500).render('500', {
+    pageTitle: 'Error!',
+    path: '/500',
+    isAuthenticated: req.session.isLoggedIn
+  });
+});
+
+_________________________________________________*** Upload and Download the document ***__________________________________________
+
+const multer = require('multer');
+
+const fileStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'images')
+  },
+  filename: (req, file, cb) => {
+    cb(null, file.originalname)
+  }
+});
+
+const fileFilter = (req, file, cb) => {
+  if(file.mimetype === 'image/png' || file.mimetype === 'image/jpg' || file.mimetype === 'image/jpge') {
+    cb(null, true);
+  } else {
+    cb(null, false);
+  }
+};
+
+app.use(multer({storage: fileStorage, fileFilter: fileFilter	}).single('image'));
+app.use('/images', express.static(path.join(__dirname, 'images')));
+
+
+2) Download with auth
+
+const fs = require('fs');
+const path = require('path');
+
+exports.getInvioce = (req, res, next) => {
+	const invoicePath = path.join('data', 'invoice.pdf');
+	fs.readFile(invoicePath, (err, data) => {
+		if(err) {
+			return next(err);
+		}
+		res.setHeader('Content-Type', 'application/pdf');
+		res.setHeader('Content-Disposition', 'inline; filename=<invoiceName>' , ) //inline or attachment
+		res.send(data);
+	});
+
+}
+
+Type 2) : - Streaming (for bigger files)
+
+exports.getInvioce = (req, res, next) => {
+	const invoicePath = path.join('data', 'invoice.pdf');
+	const file = fs.createReadStream(invoicePath);
+	res.setHeader('Content-Type', 'application/pdf');
+	res.setHeader('Content-Disposition', 'inline; filename=<invoiceName>' , ) //inline or attachment
+	file.pipe(res);
+
+}
+
+************pdfKit: for geerating pdf dynamically***************
+
+3) Delete file
+
+ fs.unlink(filepath, (err) => {
+	if(err) {
+		throw err;
+	}
+ });
+
+_________________________________________________*** API Calls ***__________________________________________
+
+
+app.use(bodyParser.json());
+app.use(express.json());
+
+
+calling API:
+
+	exports.getPosts = (req, res, next) => {
+		res.status(200).json({title: 'message', content: 'bagtos kay'});
+	}
+
+Cross Origin resource sharing (CORS):
+
+app.use((req, res, next) => {
+	res.setHeader('Access-Control-Allow-Origin', '*');
+	res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH,DELETE');
+	res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+});
+
+
+simon
+
+___________________________________________________**crypto**____________________________________________________
+
+Getting Random string 
+
+const crypto = require('crypto'); // already in nodejs
+
+  crypto.randomBytes(32, (err, buffer) => {
+  	const token = buffer.toString('hex');
+  })
+
+____________________________________________________**JsonWebToken**_____________________________________________
+
+const jwt = require('jsonwebtoken');
+
+Set token:-
+	const token = jwt.sign({
+		email: body.email
+	},
+	'<long_scerate_key>',
+	{ expiresIn: '1h' })
+
+Auth.js :- 
+
+const jwt = require('jsonwebtoken');
+
+module.exports = (req, res, next) => {
+    const authHeader = req.get('Authorization');
+    if (!authHeader) {
+        const error = new Error('Not authenticated');
+        error.status = 401;
+        throw error;
+    }
+
+    const token = authHeader.split(' ')[1];
+    console.log('%c ' + token, 'color:#ff0');
+    let decodedToken;
+    try {
+        decodedToken = jwt.verify(token, 'shopinngapplication');
+    } catch (err) {
+        err.status = 500;
+        throw err;
+    }
+
+    if(!decodedToken) {
+        const error = new Error('Not authenticated');
+        error.status = 401;
+        throw error;
+    }
+
+    req.email = decodedToken.email;
+    next();
+
+}
+
+####### Client side:- Angular
+
+Get token: -
+this.userAuthService.login(value).subscribe( (x: any) => {
+                console.log(x);
+                localStorage.setItem('token', x.token);
+              });
+
+
+Set token: - 
+
+@Injectable()
+export class I1 implements HttpInterceptor {
+    intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
+        const token = localStorage.getItem('token');
+        const modified = req.clone({setHeaders: {'Authorization': 'Bearer ' + token}});
+        return next.handle(modified);
+    }
+}
+
+____________________________________________________**  **_____________________________________________
